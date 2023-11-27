@@ -1,0 +1,39 @@
+*{
+    font-family: "Trebuchet MS", sans-serif;
+    margin: 0px;
+    padding: 0px;
+}
+
+.d-flex.justify-content-between {
+    margin: -10px; /* Adjust the value to decrease the space */
+    margin-bottom: 0px;
+}
+
+
+.navbar bg-body border-dark border-bottom{
+    margin: -10px;
+}
+
+.div-container.border-black.border-top {
+    margin-top: 0px; /* Adjust the value to decrease the space */
+}
+#PrintAnotaEnfermagem {
+    min-height: 100vh;
+    font-size: 12px; /* Tamanho da fonte desejado, ajuste conforme necessário */
+}
+.small-font {
+    font-size: 12px; /* Tamanho da fonte desejado, ajuste conforme necessário */
+}
+
+@media print {
+    #PrintAnotaEnfermagem {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        page-break-before: always; /* Opcional: quebra de página antes do conteúdo para cada impressão */
+    }
+    .small-font {
+        font-size: 12px; /* Tamanho da fonte desejado, ajuste conforme necessário */
+    }
+}

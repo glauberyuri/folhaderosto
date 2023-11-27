@@ -1,0 +1,46 @@
+
+
+*{
+    font-family: "Trebuchet MS", sans-serif;
+    margin-top: 0px; 
+    margin-bottom: 0px; 
+    margin-left: 0px; 
+    margin-right: 0px;
+    padding: 0;
+}
+
+.d-flex.justify-content-between {
+  margin: -10px; /* Adjust the value to decrease the space */
+  margin-bottom: 0px;
+}
+
+
+.navbar bg-body border-dark border-bottom{
+  margin: -10px;
+}
+
+.div-container.border-black.border-top {
+  margin-top: 0px; /* Adjust the value to decrease the space */
+}
+
+  
+@media screen {
+    #printPage {
+        display: none;
+    }
+    #printAmbulatorio {
+      display: none;
+  }
+  }
+  
+  @media print {
+    body * {
+      visibility:hidden;
+    }
+    #printPage, #printPage * {
+      visibility:visible;
+    }
+    .main-content{
+        display: none;
+    }
+}
