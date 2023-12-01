@@ -219,7 +219,7 @@ class CallsPageController extends Controller
                 WHERE ATENDIME.TP_ATENDIMENTO = 'I'
                       AND ATENDIME.HR_ALTA_MEDICA IS NOT NULL
                       AND to_char(ATENDIME.HR_ALTA,'DD/MM/YYYY') = to_date(sysdate - 1)
-                      AND CONVENIO.CD_CONVENIO = 293 AND ATENDIME.CD_ATENDIMENTO = 2982466"
+                      AND CONVENIO.CD_CONVENIO = 293 AND ATENDIME.CD_ATENDIMENTO = 2980850"
 
         );
 
@@ -285,8 +285,7 @@ class CallsPageController extends Controller
         }
 
         $xml.=$internacoes."</loteInternacao>";
-        echo $internacoes;
-        exit;
+    
         $params = array(
             'usuarioIAG' => '2827-import',
             'senhaIAG' => 'ZNTevMwD',
