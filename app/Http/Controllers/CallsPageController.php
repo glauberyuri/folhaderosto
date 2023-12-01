@@ -219,7 +219,7 @@ class CallsPageController extends Controller
                 WHERE ATENDIME.TP_ATENDIMENTO = 'I'
                       AND ATENDIME.HR_ALTA_MEDICA IS NOT NULL
                       AND to_char(ATENDIME.HR_ALTA,'DD/MM/YYYY') = to_date(sysdate - 1)
-                      AND CONVENIO.CD_CONVENIO = 293"
+                      AND CONVENIO.CD_CONVENIO = 293 AND ATENDIME.CD_ATENDIMENTO = 2982466"
 
         );
 
@@ -269,7 +269,7 @@ class CallsPageController extends Controller
                 <Operadora>
                     <codigo>10689</codigo>
                     <plano>{$internacao['NM_CONVENIO']}</plano>
-                    <numeroCarteira>{$internacao['CNS_NOVA']}</numeroCarteira>
+                    <numeroCarteira>{$internacao['CNS']}</numeroCarteira>
                 </Operadora>
                 <Medico>
                     <nome>{$internacao['MEDICO']}</nome>
@@ -283,6 +283,7 @@ class CallsPageController extends Controller
         }
 
         $xml.=$internacoes."</loteInternacao>";
+        echo $internacoes;
         exit;
         $params = array(
             'usuarioIAG' => '2827-import',
@@ -293,7 +294,7 @@ class CallsPageController extends Controller
 
         $wsdlUrl = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao?wsdl';
         $endpoint = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao';
-        $client = new SoapClient($wsdlUrl, array('trace' => 1, 'exceptions' => 1, 'location' => $endpoint));
+        $client = new \SoapClient($wsdlUrl, array('trace' => 1, 'exceptions' => 1, 'location' => $endpoint));
 
         try {
             $method = 'importaInternacao';
@@ -302,7 +303,7 @@ class CallsPageController extends Controller
             print_r($response);
 
             echo "<br><br>Last SOAP Request:\n" . $client->__getLastRequest() . "\n";
-        } catch (SoapFault $fault) {
+        } catch (\SoapFault $fault) {
             echo "SOAP Fault: " . $fault->getMessage() . "\n";
 
         }
