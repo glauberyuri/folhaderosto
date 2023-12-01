@@ -174,7 +174,7 @@ class CallsPageController extends Controller
                 DISTINCT ATENDIME.CD_ATENDIMENTO,
                 PACIENTE.NM_PACIENTE,
                 ATENDIME.NR_CARTEIRA AS CNS,
-                TO_CHAR(PACIENTE.DT_NASCIMENTO, 'YYYY-MM-DD HH:MM:SS') AS DT_NASCIMENTO, /* yyyy-MM-ddTHH:mm:ss */
+                TO_CHAR(TO_TIMESTAMP_TZ(PACIENTE.DT_NASCIMENTO, 'YYYY-MM-DD HH24:MI:SS TZD'), 'YYYY-MM-DD'T'HH24:MI:SS TZD') AS DT_NASCIMENTO,
                 PACIENTE.TP_SEXO AS SEXO,
                 PACIENTE.DS_ENDERECO AS RUA,
                 PACIENTE.NR_ENDERECO AS NUMERO,
@@ -219,7 +219,7 @@ class CallsPageController extends Controller
                 WHERE ATENDIME.TP_ATENDIMENTO = 'I'
                       AND ATENDIME.HR_ALTA_MEDICA IS NOT NULL
                       AND to_char(ATENDIME.HR_ALTA,'DD/MM/YYYY') = to_date(sysdate - 1)
-                      AND CONVENIO.CD_CONVENIO = 293 AND ATENDIME.CD_ATENDIMENTO = 2982466"
+                      AND CONVENIO.CD_CONVENIO = 293 AND ATENDIME.CD_ATENDIMENTO = 2982179"
 
         );
 
