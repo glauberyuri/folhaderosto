@@ -37,6 +37,7 @@ Route::get('pharmacy_request/{id}', [CallsPageController::class, 'pharmacyReques
 
 // Atendimentos
 Route::get('/atendimentos', [CallsPageController::class, 'list']);
+Route::get('/integra', [CallsPageController::class, 'integraDRG']);
 
 Route::post('upload', [CallsPageController::class, 'uploadPost'] );
 Route::get('readCsv', [CallsPageController::class, 'readCsv'] );

@@ -167,6 +167,146 @@ class CallsPageController extends Controller
         }
 
     }
+    public function integraDRG(){
+
+        $internacoesDB = $this->select(
+            "SELECT --PACIENTE.CD_PACIENTE,
+                DISTINCT ATENDIME.CD_ATENDIMENTO,
+                PACIENTE.NM_PACIENTE,
+                ATENDIME.NR_CARTEIRA AS CNS,
+                PACIENTE.DT_NASCIMENTO AS DT_NASCIMENTO ,  /* yyyy-MM-ddTHH:mm:ss */
+                PACIENTE.TP_SEXO AS SEXO,
+                PACIENTE.DS_ENDERECO AS RUA,
+                PACIENTE.NR_ENDERECO AS NUMERO,
+                NVL(PACIENTE.DS_COMPLEMENTO, ' ') AS DS_COMPLEMENTO,
+                PACIENTE.NM_BAIRRO AS BAIRRO,
+                CIDADE.CD_UF AS UF,
+                NVL(PACIENTE.NR_CEP, 'NAO INFORMADO') AS NR_CEP,
+                ATENDIME.CD_PACIENTE,
+                ATENDIME.DT_ATENDIMENTO AS DT_ATENDIMENTO , /* yyyy-MM-ddTHH:mm:ss */
+                CONVENIO.NM_CONVENIO,
+                NVL(CIDADE.NM_CIDADE, 'NAO INFORMADO') AS NATURALIDADE,
+                CIDADE.CD_CIDADE AS CD_CIDADE,
+                PRESTADOR.NM_PRESTADOR AS MEDICO,
+                PRESTADOR.DS_CODIGO_CONSELHO AS CRM,
+                CONSELHO.CD_UF AS UFCONSELHO,
+                ESPECIALID.DS_ESPECIALID AS ESPECIALIDADE,
+                ATENDIME.HR_ALTA_MEDICA AS ALTAMEDICA,
+                ATENDIME.HR_ALTA AS ALTAHOSPITALAR,
+                    CASE
+                    WHEN ATENDIME.TP_CARATER_INTERNACAO = 'E' THEN 1
+                    WHEN ATENDIME.TP_CARATER_INTERNACAO = 'U' THEN 2
+                    END AS TP_CARATER_INTERNACAO,
+                ATENDIME.CD_CID AS CID,
+                MOT_ALT.TP_MOT_ALTA AS MOTIVOALTA
+               /* FALTANDO CAMPOS ->  Código do caráter da internação ELETIVO, ADIMISSIONAL*/
+            FROM ATENDIME
+            left join DBAMV.PACIENTE on ATENDIME.CD_PACIENTE = PACIENTE.CD_PACIENTE
+
+                left join DBAMV.CIDADE on PACIENTE.CD_CIDADE = CIDADE.CD_CIDADE
+                left join DBAMV.PRESTADOR on ATENDIME.CD_PRESTADOR = PRESTADOR.CD_PRESTADOR
+                left join DBAMV.CONVENIO ON atendime.cd_convenio = convenio.cd_convenio
+                left join DBAMV.CID ON ATENDIME.CD_CID = CID.CD_CID
+                left join DBAMV.CON_PLA ON Atendime.CD_CON_PLA = CON_PLA.CD_CON_PLA and atendime.CD_CONVENIO = CON_PLA.CD_CONVENIO
+                left join DBAMV.CARTEIRA ON CARTEIRA.CD_PACIENTE = PACIENTE.CD_PACIENTE
+                                            and Atendime.cd_con_pla = carteira.cd_con_pla
+                                            and atendime.cd_convenio = carteira.cd_convenio
+                left join DBAMV.ESPECIALID ON ATENDIME.CD_ESPECIALID = ESPECIALID.CD_ESPECIALID
+                /*left join multi_empresas on multi_empresas.cd_multi_empresa = atendime.cd_multi_empresa*/
+                left join DBAMV.CONSELHO ON CONSELHO.CD_CONSELHO = PRESTADOR.CD_CONSELHO
+                left join mot_alt ON MOT_ALT.CD_MOT_ALT = ATENDIME.CD_MOT_ALT
+
+                WHERE ATENDIME.TP_ATENDIMENTO = 'I'
+                      AND ATENDIME.HR_ALTA_MEDICA IS NOT NULL
+                      AND to_char(ATENDIME.HR_ALTA,'DD/MM/YYYY') = to_date(sysdate - 1)
+                      AND CONVENIO.CD_CONVENIO = 293"
+
+        );
+
+        $xml="<loteInternacao>";
+
+        $internacoes="";
+
+        foreach($internacoesDB AS $key=>$internacao){
+            $internacoes .= "
+               <Internacao>
+                <situacao>1</situacao>
+                <caraterInternacao>{$internacao['TP_CARATER_INTERNACAO']}</caraterInternacao>
+                <numeroAtendimento>{$internacao['CD_ATENDIMENTO']}</numeroAtendimento>
+                <numeroAutorizacao></numeroAutorizacao>
+                <dataInternacao>{$internacao['DT_ATENDIMENTO']}</dataInternacao>
+                <dataAlta>{$internacao['ALTAMEDICA']}</dataAlta>
+                <condicaoAlta>{$internacao['MOTIVOALTA']}</condicaoAlta>
+                <dataAutorizacao>{$internacao['DT_ATENDIMENTO']}</dataAutorizacao>
+                <codigoCidPrincipal>{$internacao['CID']}</codigoCidPrincipal>
+                <Hospital>
+                    <codigo>7595</codigo>
+                    <nome>HOSPITAL DAS CLINICAS DR. MARIO RIBEIRO DA SILVEIRA</nome>
+                    <cnes>7366108</cnes>
+                    <porte>2</porte>
+                    <complexidade>2</complexidade>
+                    <esferaAdministrativa>3</esferaAdministrativa>
+                    <uf>MG</uf>
+                    <cidade>2065</cidade>
+                    <tipoLogradouro>RUA</tipoLogradouro>
+                    <logradouro>PLINIO RIBEIRO</logradouro>
+                    <numeroLogradouro>539</numeroLogradouro>
+                    <complementoLogradouro></complementoLogradouro>
+                    <bairro>JARDIM BRASIL</bairro>
+                    <cep>39401222</cep>
+                </Hospital>
+                <Beneficiario>
+                    <dataNascimento>{$internacao['DT_NASCIMENTO']}</dataNascimento>
+                    <sexo>{$internacao['SEXO']}</sexo>
+                    <uf>{$internacao['UF']}</uf>
+                    <cidade>{$internacao['CD_CIDADE']}</cidade>
+                    <logradouro>{$internacao['RUA']}</logradouro>
+                    <numeroLogradouro>{$internacao['NUMERO']}</numeroLogradouro>
+                    <complementoLogradouro>{$internacao['DS_COMPLEMENTO']}</complementoLogradouro>
+                    <bairro>{$internacao['BAIRRO']}</bairro>
+                    <cep>{$internacao['NR_CEP']}</cep>
+                </Beneficiario>
+                <Operadora>
+                    <codigo>10689</codigo>
+                    <plano>{$internacao['NM_CONVENIO']}</plano>
+                    <numeroCarteira>{$internacao['CNS_NOVA']}</numeroCarteira>
+                </Operadora>
+                <Medico>
+                    <nome>{$internacao['MEDICO']}</nome>
+                    <uf>{$internacao['UFCONSELHO']}</uf>
+                    <crm>{$internacao['CRM']}</crm>
+                    <especialidade>{$internacao['ESPECIALIDADE']}</especialidade>
+                    <medicoResponsavel>S</medicoResponsavel>
+                </Medico>
+            </Internacao>
+            ";
+        }
+
+        $xml.=$internacoes."</loteInternacao>";
+        exit;
+        $params = array(
+            'usuarioIAG' => '2827-import',
+            'senhaIAG' => 'ZNTevMwD',
+//    'xml' => "<![CDATA[{$xml}]]>",
+            'xml' => $xml,
+        );
+
+        $wsdlUrl = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao?wsdl';
+        $endpoint = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao';
+        $client = new SoapClient($wsdlUrl, array('trace' => 1, 'exceptions' => 1, 'location' => $endpoint));
+
+        try {
+            $method = 'importaInternacao';
+            $response = $client->__soapCall($method, array($params));
+            echo "SOAP Response:\n";
+            print_r($response);
+
+            echo "<br><br>Last SOAP Request:\n" . $client->__getLastRequest() . "\n";
+        } catch (SoapFault $fault) {
+            echo "SOAP Fault: " . $fault->getMessage() . "\n";
+
+        }
+    }
 
     public function list(Request $request)
     {
