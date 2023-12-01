@@ -174,7 +174,7 @@ class CallsPageController extends Controller
                 DISTINCT ATENDIME.CD_ATENDIMENTO,
                 PACIENTE.NM_PACIENTE,
                 ATENDIME.NR_CARTEIRA AS CNS,
-                PACIENTE.DT_NASCIMENTO AS DT_NASCIMENTO ,  /* yyyy-MM-ddTHH:mm:ss */
+                TO_CHAR(PACIENTE.DT_NASCIMENTO, 'YYYY-MM-DD HH:MM:SS') AS DT_NASCIMENTO, /* yyyy-MM-ddTHH:mm:ss */
                 PACIENTE.TP_SEXO AS SEXO,
                 PACIENTE.DS_ENDERECO AS RUA,
                 PACIENTE.NR_ENDERECO AS NUMERO,
@@ -183,7 +183,7 @@ class CallsPageController extends Controller
                 CIDADE.CD_UF AS UF,
                 NVL(PACIENTE.NR_CEP, 'NAO INFORMADO') AS NR_CEP,
                 ATENDIME.CD_PACIENTE,
-                ATENDIME.DT_ATENDIMENTO AS DT_ATENDIMENTO , /* yyyy-MM-ddTHH:mm:ss */
+                TO_CHAR(ATENDIME.DT_ATENDIMENTO, 'YYYY-MM-DD HH:MM:SS') AS DT_ATENDIMENTO, /* yyyy-MM-ddTHH:mm:ss */
                 CONVENIO.NM_CONVENIO,
                 NVL(CIDADE.NM_CIDADE, 'NAO INFORMADO') AS NATURALIDADE,
                 CIDADE.CD_CIDADE AS CD_CIDADE,
@@ -191,8 +191,8 @@ class CallsPageController extends Controller
                 PRESTADOR.DS_CODIGO_CONSELHO AS CRM,
                 CONSELHO.CD_UF AS UFCONSELHO,
                 ESPECIALID.DS_ESPECIALID AS ESPECIALIDADE,
-                ATENDIME.HR_ALTA_MEDICA AS ALTAMEDICA,
-                ATENDIME.HR_ALTA AS ALTAHOSPITALAR,
+                TO_CHAR(ATENDIME.HR_ALTA_MEDICA , 'YYYY-MM-DD HH:MM:SS')  AS ALTAMEDICA,
+                TO_CHAR(ATENDIME.HR_ALTA , 'YYYY-MM-DD HH:MM:SS')  AS ALTAHOSPITALAR,
                     CASE
                     WHEN ATENDIME.TP_CARATER_INTERNACAO = 'E' THEN 1
                     WHEN ATENDIME.TP_CARATER_INTERNACAO = 'U' THEN 2
@@ -258,6 +258,8 @@ class CallsPageController extends Controller
                 <Beneficiario>
                     <dataNascimento>{$internacao['DT_NASCIMENTO']}</dataNascimento>
                     <sexo>{$internacao['SEXO']}</sexo>
+                    <cidade>{$internacao['NATURALIDADE']}</cidade>
+                    <particular>N</particular>
                     <uf>{$internacao['UF']}</uf>
                     <cidade>{$internacao['CD_CIDADE']}</cidade>
                     <logradouro>{$internacao['RUA']}</logradouro>
@@ -269,7 +271,7 @@ class CallsPageController extends Controller
                 <Operadora>
                     <codigo>10689</codigo>
                     <plano>{$internacao['NM_CONVENIO']}</plano>
-                    <numeroCarteira>{$internacao['CNS_NOVA']}</numeroCarteira>
+                    <numeroCarteira>{$internacao['CNS']}</numeroCarteira>
                 </Operadora>
                 <Medico>
                     <nome>{$internacao['MEDICO']}</nome>
@@ -283,7 +285,7 @@ class CallsPageController extends Controller
         }
 
         $xml.=$internacoes."</loteInternacao>";
-        exit;
+
         $params = array(
             'usuarioIAG' => '2827-import',
             'senhaIAG' => 'ZNTevMwD',
@@ -293,7 +295,7 @@ class CallsPageController extends Controller
 
         $wsdlUrl = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao?wsdl';
         $endpoint = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao';
-        $client = new SoapClient($wsdlUrl, array('trace' => 1, 'exceptions' => 1, 'location' => $endpoint));
+        $client = new \SoapClient($wsdlUrl, array('trace' => 1, 'exceptions' => 1, 'location' => $endpoint));
 
         try {
             $method = 'importaInternacao';
@@ -302,7 +304,7 @@ class CallsPageController extends Controller
             print_r($response);
 
             echo "<br><br>Last SOAP Request:\n" . $client->__getLastRequest() . "\n";
-        } catch (SoapFault $fault) {
+        } catch (\SoapFault $fault) {
             echo "SOAP Fault: " . $fault->getMessage() . "\n";
 
         }
