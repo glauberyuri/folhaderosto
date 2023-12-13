@@ -171,74 +171,102 @@ class CallsPageController extends Controller
 
         $internacoesDB = $this->select(
             "SELECT --PACIENTE.CD_PACIENTE,
-                DISTINCT ATENDIME.CD_ATENDIMENTO,
-                PACIENTE.NM_PACIENTE,
-                ATENDIME.NR_CARTEIRA AS CNS,
-                TO_CHAR(TO_TIMESTAMP_TZ(PACIENTE.DT_NASCIMENTO, 'YYYY-MM-DD HH24:MI:SS TZD'), 'YYYY-MM-DD'T'HH24:MI:SS TZD') AS DT_NASCIMENTO,
-                PACIENTE.TP_SEXO AS SEXO,
-                PACIENTE.DS_ENDERECO AS RUA,
-                PACIENTE.NR_ENDERECO AS NUMERO,
-                NVL(PACIENTE.DS_COMPLEMENTO, ' ') AS DS_COMPLEMENTO,
-                PACIENTE.NM_BAIRRO AS BAIRRO,
-                CIDADE.CD_UF AS UF,
-                NVL(PACIENTE.NR_CEP, 'NAO INFORMADO') AS NR_CEP,
-                ATENDIME.CD_PACIENTE,
-                TO_CHAR(ATENDIME.DT_ATENDIMENTO, 'YYYY-MM-DD HH:MM:SS') AS DT_ATENDIMENTO, /* yyyy-MM-ddTHH:mm:ss */
-                CONVENIO.NM_CONVENIO,
-                NVL(CIDADE.NM_CIDADE, 'NAO INFORMADO') AS NATURALIDADE,
-                CIDADE.CD_CIDADE AS CD_CIDADE,
-                PRESTADOR.NM_PRESTADOR AS MEDICO,
-                PRESTADOR.DS_CODIGO_CONSELHO AS CRM,
-                CONSELHO.CD_UF AS UFCONSELHO,
-                ESPECIALID.DS_ESPECIALID AS ESPECIALIDADE,
-                TO_CHAR(ATENDIME.HR_ALTA_MEDICA , 'YYYY-MM-DD HH:MM:SS')  AS ALTAMEDICA,
-                TO_CHAR(ATENDIME.HR_ALTA , 'YYYY-MM-DD HH:MM:SS')  AS ALTAHOSPITALAR,
-                    CASE
+            DISTINCT ATENDIME.CD_ATENDIMENTO,
+            PACIENTE.NM_PACIENTE,
+            ATENDIME.NR_CARTEIRA AS CNS,
+            TO_CHAR(PACIENTE.DT_NASCIMENTO, 'YYYY-MM-DD HH:MM:SS') AS DT_NASCIMENTO,
+            PACIENTE.TP_SEXO AS SEXO,
+            PACIENTE.DS_ENDERECO AS RUA,
+            PACIENTE.NR_ENDERECO AS NUMERO,
+            NVL(PACIENTE.DS_COMPLEMENTO, ' ') AS DS_COMPLEMENTO,
+            PACIENTE.NM_BAIRRO AS BAIRRO,
+            CIDADE.CD_UF AS UF,
+            NVL(PACIENTE.NR_CEP, '00000000') AS NR_CEP,
+            ATENDIME.CD_PACIENTE,
+            TO_CHAR(ATENDIME.DT_ATENDIMENTO, 'YYYY-MM-DD HH:MM:SS') AS DT_ATENDIMENTO, /* yyyy-MM-ddTHH:mm:ss */
+            CONVENIO.NM_CONVENIO,
+            NVL(CIDADE.NM_CIDADE, 'NAO INFORMADO') AS NATURALIDADE,
+            CIDADE.CD_CIDADE AS CD_CIDADE,
+            PRESTADOR.NM_PRESTADOR AS MEDICO,
+            PRESTADOR.DS_CODIGO_CONSELHO AS CRM,
+            CONSELHO.CD_UF AS UFCONSELHO,
+            ESPECIALID.DS_ESPECIALID AS ESPECIALIDADE,
+            TO_CHAR(ATENDIME.HR_ALTA_MEDICA , 'YYYY-MM-DD HH:MM:SS')  AS ALTAMEDICA,
+            TO_CHAR(ATENDIME.HR_ALTA , 'YYYY-MM-DD HH:MM:SS')  AS ALTAHOSPITALAR,
+            NVL(RECEM_NASCIDO.Vl_Peso, 0) AS RNPESO,
+                            CASE
                     WHEN ATENDIME.TP_CARATER_INTERNACAO = 'E' THEN 1
                     WHEN ATENDIME.TP_CARATER_INTERNACAO = 'U' THEN 2
-                    END AS TP_CARATER_INTERNACAO,
-                ATENDIME.CD_CID AS CID,
-                MOT_ALT.TP_MOT_ALTA AS MOTIVOALTA
-               /* FALTANDO CAMPOS ->  Código do caráter da internação ELETIVO, ADIMISSIONAL*/
-            FROM ATENDIME
-            left join DBAMV.PACIENTE on ATENDIME.CD_PACIENTE = PACIENTE.CD_PACIENTE
+                END AS TP_CARATER_INTERNACAO,
+                CASE
+                    WHEN trunc((months_between(sysdate, to_date( to_char(PACIENTE.DT_NASCIMENTO,'dd/mm/yyyy'),'dd/mm/yyyy')))/12)  = 0
+                         THEN 'S'
+                    WHEN trunc((months_between(sysdate, to_date( to_char(PACIENTE.DT_NASCIMENTO,'dd/mm/yyyy'),'dd/mm/yyyy')))/12)  > 0 THEN 'N'
+                END AS STATUSRN,
+            ATENDIME.CD_CID AS CID,
+                CASE
+                    --REALIZAR MOTIVO DA ALTA CASO VENHA T DE TRANSFERENCIA EXTERNA
+                    WHEN MOT_ALT.TP_MOT_ALTA = 'T' THEN 'C'
+                ELSE MOT_ALT.TP_MOT_ALTA
+                END AS MOTIVOALTA,
+                --MOT_ALT.TP_MOT_ALTA 
+           /* FALTANDO CAMPOS ->  Código do caráter da internação ELETIVO, ADIMISSIONAL*/
+                (
+                    SELECT CD_CID
+                    FROM ATENDIME AT_MAE
+                    WHERE AT_MAE.CD_ATENDIMENTO = ATENDIME.CD_ATENDIMENTO_PAI
+                ) AS CID_MAE
+        FROM ATENDIME
+        left join DBAMV.PACIENTE on ATENDIME.CD_PACIENTE = PACIENTE.CD_PACIENTE
 
-                left join DBAMV.CIDADE on PACIENTE.CD_CIDADE = CIDADE.CD_CIDADE
-                left join DBAMV.PRESTADOR on ATENDIME.CD_PRESTADOR = PRESTADOR.CD_PRESTADOR
-                left join DBAMV.CONVENIO ON atendime.cd_convenio = convenio.cd_convenio
-                left join DBAMV.CID ON ATENDIME.CD_CID = CID.CD_CID
-                left join DBAMV.CON_PLA ON Atendime.CD_CON_PLA = CON_PLA.CD_CON_PLA and atendime.CD_CONVENIO = CON_PLA.CD_CONVENIO
-                left join DBAMV.CARTEIRA ON CARTEIRA.CD_PACIENTE = PACIENTE.CD_PACIENTE
-                                            and Atendime.cd_con_pla = carteira.cd_con_pla
-                                            and atendime.cd_convenio = carteira.cd_convenio
-                left join DBAMV.ESPECIALID ON ATENDIME.CD_ESPECIALID = ESPECIALID.CD_ESPECIALID
-                /*left join multi_empresas on multi_empresas.cd_multi_empresa = atendime.cd_multi_empresa*/
-                left join DBAMV.CONSELHO ON CONSELHO.CD_CONSELHO = PRESTADOR.CD_CONSELHO
-                left join mot_alt ON MOT_ALT.CD_MOT_ALT = ATENDIME.CD_MOT_ALT
+            left join DBAMV.CIDADE on PACIENTE.CD_CIDADE = CIDADE.CD_CIDADE
+            left join DBAMV.PRESTADOR on ATENDIME.CD_PRESTADOR = PRESTADOR.CD_PRESTADOR
+            left join DBAMV.CONVENIO ON atendime.cd_convenio = convenio.cd_convenio
+            left join DBAMV.CID ON ATENDIME.CD_CID = CID.CD_CID
+            left join DBAMV.CON_PLA ON Atendime.CD_CON_PLA = CON_PLA.CD_CON_PLA and atendime.CD_CONVENIO = CON_PLA.CD_CONVENIO
+            left join DBAMV.CARTEIRA ON CARTEIRA.CD_PACIENTE = PACIENTE.CD_PACIENTE
+                                        and Atendime.cd_con_pla = carteira.cd_con_pla
+                                        and atendime.cd_convenio = carteira.cd_convenio
+            left join DBAMV.ESPECIALID ON ATENDIME.CD_ESPECIALID = ESPECIALID.CD_ESPECIALID
+            /*left join multi_empresas on multi_empresas.cd_multi_empresa = atendime.cd_multi_empresa*/
+            left join DBAMV.CONSELHO ON CONSELHO.CD_CONSELHO = PRESTADOR.CD_CONSELHO
+            left join mot_alt ON MOT_ALT.CD_MOT_ALT = ATENDIME.CD_MOT_ALT
+            left join RECEM_NASCIDO ON RECEM_NASCIDO.CD_ATENDIMENTO = ATENDIME.CD_ATENDIMENTO 
 
-                WHERE ATENDIME.TP_ATENDIMENTO = 'I'
-                      AND ATENDIME.HR_ALTA_MEDICA IS NOT NULL
-                      AND to_char(ATENDIME.HR_ALTA,'DD/MM/YYYY') = to_date(sysdate - 1)
-                      AND CONVENIO.CD_CONVENIO = 293 AND ATENDIME.CD_ATENDIMENTO = 2980850"
+            WHERE ATENDIME.TP_ATENDIMENTO = 'I'
+                  AND ATENDIME.HR_ALTA_MEDICA IS NOT NULL
+                  /* INSERÇÃO DATA DE ALTA ABAIXO */
+                  AND to_char(ATENDIME.HR_ALTA,'DD/MM/YYYY') = '20/09/2023'
+                  AND CONVENIO.CD_CONVENIO = 293"
 
         );
-
+       
         $xml="<loteInternacao>";
 
         $internacoes="";
-
         foreach($internacoesDB AS $key=>$internacao){
+    
+            $DT_NASCIMENTO = date('Y-m-d\TH:i:s', strtotime($internacao['DT_NASCIMENTO']));
+            $ALTAHOSPITALAR = date('Y-m-d\TH:i:s', strtotime($internacao['ALTAHOSPITALAR']));
+            $DT_ATENDIMENTO = date('Y-m-d\TH:i:s', strtotime($internacao['DT_ATENDIMENTO']));
+            $CID_PRINCIPAL = ($internacao['CID'] == NULL) ? $internacao['CID_MAE'] : $internacao['CID'];
+            $PESOATUAL = ($internacao['STATUSRN'] == 'S' && $internacao['RNPESO'] == 0 ) ? 251 : $internacao['RNPESO'] ;
+            $rnSection = ($internacao['STATUSRN'] == 'S') ? "<Rn> 
+                <pesoNascimento>{$PESOATUAL}</pesoNascimento> 
+                </Rn>" : "";
+    
+            // Constrói a string completa da Internacao
             $internacoes .= "
                <Internacao>
-                <situacao>1</situacao>
+                <situacao>3</situacao>
                 <caraterInternacao>{$internacao['TP_CARATER_INTERNACAO']}</caraterInternacao>
                 <numeroAtendimento>{$internacao['CD_ATENDIMENTO']}</numeroAtendimento>
                 <numeroAutorizacao></numeroAutorizacao>
-                <dataInternacao>{$internacao['DT_ATENDIMENTO']}</dataInternacao>
-                <dataAlta>{$internacao['ALTAMEDICA']}</dataAlta>
+                <dataInternacao>{$DT_ATENDIMENTO}</dataInternacao>
+                <dataAlta>{$ALTAHOSPITALAR}</dataAlta>
                 <condicaoAlta>{$internacao['MOTIVOALTA']}</condicaoAlta>
-                <dataAutorizacao>{$internacao['DT_ATENDIMENTO']}</dataAutorizacao>
-                <codigoCidPrincipal>{$internacao['CID']}</codigoCidPrincipal>
+                <dataAutorizacao>{$DT_ATENDIMENTO}</dataAutorizacao>
+                <codigoCidPrincipal>{$CID_PRINCIPAL}</codigoCidPrincipal>
                 <Hospital>
                     <codigo>7595</codigo>
                     <nome>HOSPITAL DAS CLINICAS DR. MARIO RIBEIRO DA SILVEIRA</nome>
@@ -256,12 +284,11 @@ class CallsPageController extends Controller
                     <cep>39401222</cep>
                 </Hospital>
                 <Beneficiario>
-                    <dataNascimento>{$internacao['DT_NASCIMENTO']}</dataNascimento>
+                    <dataNascimento>{$DT_NASCIMENTO}</dataNascimento>
                     <sexo>{$internacao['SEXO']}</sexo>
-                    <cidade>{$internacao['NATURALIDADE']}</cidade>
                     <particular>N</particular>
+                    <recemNascido>{$internacao['STATUSRN']}</recemNascido>
                     <uf>{$internacao['UF']}</uf>
-                    <cidade>{$internacao['CD_CIDADE']}</cidade>
                     <logradouro>{$internacao['RUA']}</logradouro>
                     <numeroLogradouro>{$internacao['NUMERO']}</numeroLogradouro>
                     <complementoLogradouro>{$internacao['DS_COMPLEMENTO']}</complementoLogradouro>
@@ -269,7 +296,7 @@ class CallsPageController extends Controller
                     <cep>{$internacao['NR_CEP']}</cep>
                 </Beneficiario>
                 <Operadora>
-                    <codigo>10689</codigo>
+                    <codigo>293</codigo>
                     <plano>{$internacao['NM_CONVENIO']}</plano>
                     <numeroCarteira>{$internacao['CNS']}</numeroCarteira>
                 </Operadora>
@@ -280,12 +307,14 @@ class CallsPageController extends Controller
                     <especialidade>{$internacao['ESPECIALIDADE']}</especialidade>
                     <medicoResponsavel>S</medicoResponsavel>
                 </Medico>
+                {$rnSection}
             </Internacao>
             ";
         }
 
         $xml.=$internacoes."</loteInternacao>";
-    
+        
+      
         $params = array(
             'usuarioIAG' => '2827-import',
             'senhaIAG' => 'ZNTevMwD',
@@ -295,7 +324,16 @@ class CallsPageController extends Controller
 
         $wsdlUrl = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao?wsdl';
         $endpoint = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao';
-        $client = new \SoapClient($wsdlUrl, array('trace' => 1, 'exceptions' => 1, 'location' => $endpoint));
+        ini_set('default_socket_timeout', 5000);
+        $client = new \SoapClient($wsdlUrl, array(
+                                            'trace' => true,
+                                            'exceptions' => 1,
+                                            'location' => $endpoint,
+                                            'keep_alive' => true,
+                                            'connection_timeout' => 5000,
+                                            'cache_wsdl' => WSDL_CACHE_NONE,
+                                            'compression'   => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP | SOAP_COMPRESSION_DEFLATE,
+                                            ));
 
         try {
             $method = 'importaInternacao';
