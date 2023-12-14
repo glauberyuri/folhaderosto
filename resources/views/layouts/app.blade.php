@@ -15,18 +15,18 @@
         <!-- Styles -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
         @yield('css')
-        
+
         <!-- Datatables -->
-       
+
         <link href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css" rel="stylesheet">
     </head>
     <body>
-       
+
         <div id="app">
             @yield('content')
         </div>
-        
-     
+
+
     </body>
     <!-- Stack the columns on mobile by making one full-width and the other half-width -->
     <!-- footer -->
@@ -36,12 +36,12 @@
                 <svg class="bi" width="30" height="24"><use xlink:href="#bootstrap"/></svg>
             </a>
         </div>
-
+    <script src="{{asset('js/loading.js')}}"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     @stack('scripts')
 
     </footer>
-    
+
 </html>

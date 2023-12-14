@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use App\Models\CallsPage; //Adicionando Model
 use App\Models\Teste; //Adicionando Model
 use Illuminate\Support\LazyCollection;
@@ -167,6 +168,147 @@ class CallsPageController extends Controller
         }
 
     }
+    public function PageIntegra(){
+        return view('integraDRG');
+    }
+
+    public function listAtendimentosIntegra(Request $request){
+
+        $date = $request->input('date');
+        $requests = $this->select(
+            "SELECT --PACIENTE.CD_PACIENTE,
+            DISTINCT ATENDIME.CD_ATENDIMENTO,
+            PACIENTE.NM_PACIENTE,
+            ATENDIME.NR_CARTEIRA AS CNS,
+            TO_CHAR(PACIENTE.DT_NASCIMENTO, 'YYYY-MM-DD HH:MM:SS') AS DT_NASCIMENTO,
+            PACIENTE.TP_SEXO AS SEXO,
+            PACIENTE.DS_ENDERECO AS RUA,
+            PACIENTE.NR_ENDERECO AS NUMERO,
+            NVL(PACIENTE.DS_COMPLEMENTO, ' ') AS DS_COMPLEMENTO,
+            PACIENTE.NM_BAIRRO AS BAIRRO,
+            CIDADE.CD_UF AS UF,
+            NVL(PACIENTE.NR_CEP, '00000000') AS NR_CEP,
+            ATENDIME.CD_PACIENTE,
+            TO_CHAR(ATENDIME.DT_ATENDIMENTO, 'YYYY-MM-DD HH:MM:SS') AS DT_ATENDIMENTO, /* yyyy-MM-ddTHH:mm:ss */
+            CONVENIO.NM_CONVENIO,
+            NVL(CIDADE.NM_CIDADE, 'NAO INFORMADO') AS NATURALIDADE,
+            CIDADE.CD_CIDADE AS CD_CIDADE,
+            PRESTADOR.NM_PRESTADOR AS MEDICO,
+            PRESTADOR.DS_CODIGO_CONSELHO AS CRM,
+            CONSELHO.CD_UF AS UFCONSELHO,
+            ESPECIALID.DS_ESPECIALID AS ESPECIALIDADE,
+            TO_CHAR(ATENDIME.HR_ALTA_MEDICA , 'YYYY-MM-DD HH:MM:SS')  AS ALTAMEDICA,
+            TO_CHAR(ATENDIME.HR_ALTA , 'YYYY-MM-DD HH:MM:SS')  AS ALTAHOSPITALAR,
+            NVL(RECEM_NASCIDO.Vl_Peso, 0) AS RNPESO,
+                            CASE
+                    WHEN ATENDIME.TP_CARATER_INTERNACAO = 'E' THEN 1
+                    WHEN ATENDIME.TP_CARATER_INTERNACAO = 'U' THEN 2
+                END AS TP_CARATER_INTERNACAO,
+                CASE
+                    WHEN trunc((months_between(sysdate, to_date( to_char(PACIENTE.DT_NASCIMENTO,'dd/mm/yyyy'),'dd/mm/yyyy')))/12)  = 0
+                         THEN 'S'
+                    WHEN trunc((months_between(sysdate, to_date( to_char(PACIENTE.DT_NASCIMENTO,'dd/mm/yyyy'),'dd/mm/yyyy')))/12)  > 0 THEN 'N'
+                END AS STATUSRN,
+            ATENDIME.CD_CID AS CID,
+                CASE
+                    --REALIZAR MOTIVO DA ALTA CASO VENHA T DE TRANSFERENCIA EXTERNA
+                    WHEN MOT_ALT.TP_MOT_ALTA = 'T' THEN 'C'
+                ELSE MOT_ALT.TP_MOT_ALTA
+                END AS MOTIVOALTA,
+                --MOT_ALT.TP_MOT_ALTA
+           /* FALTANDO CAMPOS ->  Código do caráter da internação ELETIVO, ADIMISSIONAL*/
+                (
+                    SELECT CD_CID
+                    FROM ATENDIME AT_MAE
+                    WHERE AT_MAE.CD_ATENDIMENTO = ATENDIME.CD_ATENDIMENTO_PAI
+                ) AS CID_MAE
+        FROM ATENDIME
+        left join DBAMV.PACIENTE on ATENDIME.CD_PACIENTE = PACIENTE.CD_PACIENTE
+
+            left join DBAMV.CIDADE on PACIENTE.CD_CIDADE = CIDADE.CD_CIDADE
+            left join DBAMV.PRESTADOR on ATENDIME.CD_PRESTADOR = PRESTADOR.CD_PRESTADOR
+            left join DBAMV.CONVENIO ON atendime.cd_convenio = convenio.cd_convenio
+            left join DBAMV.CID ON ATENDIME.CD_CID = CID.CD_CID
+            left join DBAMV.CON_PLA ON Atendime.CD_CON_PLA = CON_PLA.CD_CON_PLA and atendime.CD_CONVENIO = CON_PLA.CD_CONVENIO
+            left join DBAMV.CARTEIRA ON CARTEIRA.CD_PACIENTE = PACIENTE.CD_PACIENTE
+                                        and Atendime.cd_con_pla = carteira.cd_con_pla
+                                        and atendime.cd_convenio = carteira.cd_convenio
+            left join DBAMV.ESPECIALID ON ATENDIME.CD_ESPECIALID = ESPECIALID.CD_ESPECIALID
+            /*left join multi_empresas on multi_empresas.cd_multi_empresa = atendime.cd_multi_empresa*/
+            left join DBAMV.CONSELHO ON CONSELHO.CD_CONSELHO = PRESTADOR.CD_CONSELHO
+            left join mot_alt ON MOT_ALT.CD_MOT_ALT = ATENDIME.CD_MOT_ALT
+            left join RECEM_NASCIDO ON RECEM_NASCIDO.CD_ATENDIMENTO = ATENDIME.CD_ATENDIMENTO
+
+            WHERE ATENDIME.TP_ATENDIMENTO = 'I'
+                  AND ATENDIME.HR_ALTA_MEDICA IS NOT NULL
+                  /* INSERÇÃO DATA DE ALTA ABAIXO */
+                  AND to_char(ATENDIME.HR_ALTA, 'YYYY-MM-DD') = '$date'
+                  AND CONVENIO.CD_CONVENIO = 293"
+
+        );
+
+        $table = [
+            "draw" => $request->input('draw'),
+            "recordsTotal" => count($requests),
+            "recordsFiltered" => count($requests),
+            'data' => $requests,
+        ];
+
+        return $table;
+    }
+
+    public function integraAjax(Request $request)
+    {
+        // Verifica se a requisição é do tipo POST
+        if ($request->isMethod('post')) {
+            // Obtém os dados SOAP do corpo da requisição
+            $xml = $request->input('soapData');
+
+            $params = [
+                'usuarioIAG' => '2827-import',
+                'senhaIAG' => 'ZNTevMwD',
+                'xml' => $xml,
+            ];
+
+            $wsdlUrl = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao?wsdl';
+            $endpoint = 'http://iagwebservice.sigquali.com.br:80/iagwebservice/importaInternacao';
+
+            ini_set('default_socket_timeout', 5000);
+            $client = new \SoapClient($wsdlUrl, [
+                'trace' => true,
+                'exceptions' => 1,
+                'location' => $endpoint,
+                'keep_alive' => true,
+                'connection_timeout' => 5000,
+                'cache_wsdl' => WSDL_CACHE_NONE,
+                'compression'   => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP | SOAP_COMPRESSION_DEFLATE,
+            ]);
+
+            try {
+                $response = $this->callSoapMethod($client, 'importaInternacao', $params);
+
+                $xml = simplexml_load_string($response->return);
+                $data = json_decode(json_encode($xml), true);
+
+                // Exemplo: Retorna uma resposta como JSON
+                return response()->json(['data' => $data]);
+            } catch (\SoapFault $fault) {
+                return response()->json(['error' => 'Erro SOAP: ' . $fault->getMessage()], 500);
+            }
+        } else {
+            // Se a requisição não for do tipo POST, retorna um erro
+            return response()->json(['error' => 'Método não permitido'], 405); // Método não permitido
+        }
+    }
+
+    private function callSoapMethod($client, $method, $params)
+    {
+        return $client->__soapCall($method, [$params]);
+    }
+
+
+
+
     public function integraDRG(){
 
         $internacoesDB = $this->select(
@@ -209,7 +351,7 @@ class CallsPageController extends Controller
                     WHEN MOT_ALT.TP_MOT_ALTA = 'T' THEN 'C'
                 ELSE MOT_ALT.TP_MOT_ALTA
                 END AS MOTIVOALTA,
-                --MOT_ALT.TP_MOT_ALTA 
+                --MOT_ALT.TP_MOT_ALTA
            /* FALTANDO CAMPOS ->  Código do caráter da internação ELETIVO, ADIMISSIONAL*/
                 (
                     SELECT CD_CID
@@ -231,7 +373,7 @@ class CallsPageController extends Controller
             /*left join multi_empresas on multi_empresas.cd_multi_empresa = atendime.cd_multi_empresa*/
             left join DBAMV.CONSELHO ON CONSELHO.CD_CONSELHO = PRESTADOR.CD_CONSELHO
             left join mot_alt ON MOT_ALT.CD_MOT_ALT = ATENDIME.CD_MOT_ALT
-            left join RECEM_NASCIDO ON RECEM_NASCIDO.CD_ATENDIMENTO = ATENDIME.CD_ATENDIMENTO 
+            left join RECEM_NASCIDO ON RECEM_NASCIDO.CD_ATENDIMENTO = ATENDIME.CD_ATENDIMENTO
 
             WHERE ATENDIME.TP_ATENDIMENTO = 'I'
                   AND ATENDIME.HR_ALTA_MEDICA IS NOT NULL
@@ -240,21 +382,21 @@ class CallsPageController extends Controller
                   AND CONVENIO.CD_CONVENIO = 293"
 
         );
-       
+
         $xml="<loteInternacao>";
 
         $internacoes="";
         foreach($internacoesDB AS $key=>$internacao){
-    
+
             $DT_NASCIMENTO = date('Y-m-d\TH:i:s', strtotime($internacao['DT_NASCIMENTO']));
             $ALTAHOSPITALAR = date('Y-m-d\TH:i:s', strtotime($internacao['ALTAHOSPITALAR']));
             $DT_ATENDIMENTO = date('Y-m-d\TH:i:s', strtotime($internacao['DT_ATENDIMENTO']));
             $CID_PRINCIPAL = ($internacao['CID'] == NULL) ? $internacao['CID_MAE'] : $internacao['CID'];
             $PESOATUAL = ($internacao['STATUSRN'] == 'S' && $internacao['RNPESO'] == 0 ) ? 251 : $internacao['RNPESO'] ;
-            $rnSection = ($internacao['STATUSRN'] == 'S') ? "<Rn> 
-                <pesoNascimento>{$PESOATUAL}</pesoNascimento> 
+            $rnSection = ($internacao['STATUSRN'] == 'S') ? "<Rn>
+                <pesoNascimento>{$PESOATUAL}</pesoNascimento>
                 </Rn>" : "";
-    
+
             // Constrói a string completa da Internacao
             $internacoes .= "
                <Internacao>
@@ -313,8 +455,8 @@ class CallsPageController extends Controller
         }
 
         $xml.=$internacoes."</loteInternacao>";
-        
-      
+
+
         $params = array(
             'usuarioIAG' => '2827-import',
             'senhaIAG' => 'ZNTevMwD',

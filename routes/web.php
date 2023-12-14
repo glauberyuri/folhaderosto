@@ -37,7 +37,13 @@ Route::get('pharmacy_request/{id}', [CallsPageController::class, 'pharmacyReques
 
 // Atendimentos
 Route::get('/atendimentos', [CallsPageController::class, 'list']);
+
+//DRG INTEGRA
+
 Route::get('/integra', [CallsPageController::class, 'integraDRG']);
+Route::get('/integrapage', [CallsPageController::class, 'PageIntegra']);
+Route::get('/date_integracao_list', [CallsPageController::class, 'listAtendimentosIntegra']);
+Route::post('/integraajax', [CallsPageController::class, 'integraAjax']);
 
 Route::post('upload', [CallsPageController::class, 'uploadPost'] );
 Route::get('readCsv', [CallsPageController::class, 'readCsv'] );
