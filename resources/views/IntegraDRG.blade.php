@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Lista de Farmácia')
+@section('title', 'Integração de DRG')
 
 @section('css')
     <link rel="stylesheet" href="//cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
@@ -28,7 +28,7 @@
                     <!-- A tabela será exibida aqui -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Salvo com sucesso</button>
                 </div>
             </div>
         </div>
@@ -62,18 +62,18 @@
                             <div class="d-flex justify-content-center pt-2 pb-2">
                                 <div class="input-group flex-nowrap w-auto gap-3 justify-content-between">
                                     <input type="date" class="form-control text-center rounded-3" id="id_dtIntegra" aria-label="Data para Integrar" aria-describedby="addon-wrapping" placeholder="DD/MM/AAAA">
-                                    <button type="button" id="id_button" class="btn btn-primary border  border-black rounded-3">Listar Atendimentos</button>
+                                    <button type="button" id="id_button" class="btn btn-primary border  border-light rounded-3">Listar Atendimentos</button>
                                 </div>
                             </div>
 
                         </div>
-                        <div class="col-lg-12">
+                        <div class="col-lg-12 " id="id_container" style="display: none;">
                             <div class="card-body">
                                 <div class="card-title">
                                     <h3 class="text-center title-2">Atendimentos para Importação</h3>
                                 </div>
                                 <hr>
-                                <table id="list-request" class="table"  style="display: none;">
+                                <table id="list-request" class="table" >
                                     <thead class="thead-dark">
                                     <tr>
                                         <th scope="col">Codigo</th>
@@ -88,13 +88,13 @@
                                     </tbody>
                                     <tfoot>
                                     <tr>
-                                        <td colspan="6" class="text-right">Total: <span id="total-records">0</span></td>
+                                        <td colspan="6" class="text-right"><h5>Total atendimentos: <span id="total-records">0</span></h5></td>
                                     </tr>
                                     </tfoot>
                                 </table>
-                                <div class="row justify-content-end">
+                                <div class="row justify-content-center">
                                     <div class="col-2 pt-2">
-                                        <button type="button" id="id_button_importar" class="btn btn-success border  border-black rounded-3 "data-toggle="modal" data-target="#myModal" style="display: none;">Importar Atendimentos</button>
+                                        <button type="button" id="id_button_importar" class="btn btn-danger border  border-light rounded-3 "data-toggle="modal" data-target="#myModal" style="color: white;display: none;">Importar Atendimentos</button>
                                     </div>
                                 </div>
                             </div>
@@ -116,26 +116,21 @@
             tabela = $('#list-request').DataTable({
                 // DataTable configuration options
                 searching: false,
-                paging: false,
+                paging: true,
                 processing: true,
                 info: false,
                 ordering: false,
-                autoWidth: true,
+                autoWidth: false,
                 destroy: true,
-                footerCallback: function (row, data, start, end, display) {
-                    // Callback function for updating the total records in the footer
-                    var api = this.api();
-                    var apiTotal = api.column(0, { page: 'current' }).data().length;
-                    $('#total-records').text(apiTotal);
-                },
                 dom: '<"pull-right"f><"pull-left"l>tip',
                 language: {
                     // DataTable language settings
                     lengthMenu: "Exibindo _MENU_ registros por página",
                     zeroRecords: "Nenhum registro",
-                    info: "Exibindo a página _PAGE_ de _PAGES_",
                     infoEmpty: "Nenhum registro",
                     infoFiltered: "(Exibindo _MAX_ resultados)",
+                    responsive: true,
+                    autoWidth: false,
                     sSearch: "Pesquisar",
                     oPaginate: {
                         sFirst: "Primeira",
@@ -147,7 +142,13 @@
                 ajax: {
                     // AJAX configuration for fetching data
                     url: "/date_integracao_list",
-                    dataSrc: 'data',
+                    dataSrc: function (response) {
+                        // Atualiza as informações de recordsTotal e recordsFiltered na tela
+                        $('#total-records').text(response.recordsTotal || 0);
+
+                        // Retorna os dados para o DataTable
+                        return response.data || [];
+                    },
                     data: function (d) {
                         // Add the date to the parameters sent to the server
                         d.date = date;
@@ -168,7 +169,7 @@
 
         $('#id_button').click(function(){
             try {
-                $('#list-request').show();
+                $('#id_container').show();
                 dataInput = $('#id_dtIntegra').val();
                 listRequest(dataInput);
                 $('#id_button_importar').show();

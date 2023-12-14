@@ -254,7 +254,7 @@ class CallsPageController extends Controller
             'data' => $requests,
         ];
 
-        return $table;
+        return response()->json($table);
     }
 
     public function integraAjax(Request $request)
@@ -309,7 +309,7 @@ class CallsPageController extends Controller
 
 
 
-    public function integraDRG(){
+    public function integraDRGNOTAuthtification(){
 
         $internacoesDB = $this->select(
             "SELECT --PACIENTE.CD_PACIENTE,
