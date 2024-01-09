@@ -20,10 +20,10 @@ class CallsPageController extends Controller
     {
         try {
 
-            $server = "10.168.105.233";
+            $server = "172.17.3.166";
             $db_username = "WEBSERVICE";
             $db_password = "WS202300";
-            $service_name = "mvtreina.hospitalsantamonica.org";
+            $service_name = "mv2000";
             $sid = "ORCL";
             $port = 1521;
             $dbtns = "(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = $server)(PORT = $port)) (CONNECT_DATA = (SERVICE_NAME = $service_name) (SID = $sid)))";
